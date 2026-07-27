@@ -2614,16 +2614,6 @@ do
 					CornerRadius = UDimNew(0, 5),
 				})
 
-				Items["UIStroke"] = Instances:Create("UIStroke", {
-					Parent = Items["Watermark"].Instance,
-					Name = "\0",
-					Color = FromRGB(46, 52, 61),
-					Thickness = 1,
-					LineJoinMode = Enum.LineJoinMode.Miter,
-					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				})
-				Items["UIStroke"]:AddToTheme({ Color = "Border" })
-
 				Items["Text"] = Instances:Create("TextLabel", {
 					Parent = Items["Watermark"].Instance,
 					Name = "\0",
@@ -3098,14 +3088,6 @@ do
 					BackgroundColor3 = FromRGB(255, 255, 255),
 				})
 				Items["Text"]:AddToTheme({ TextColor3 = "Text" })
-
-				Instances:Create("UIStroke", {
-					Parent = Items["Notification"].Instance,
-					Name = "\0",
-					Color = FromRGB(46, 52, 61),
-					LineJoinMode = Enum.LineJoinMode.Miter,
-					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				}):AddToTheme({ Color = "Border" })
 			end
 
 			local Size = Items["Notification"].Instance.AbsoluteSize
@@ -4961,7 +4943,7 @@ do
 
 					for Index, Value in Library.OpenFrames do
 						if Value ~= Dropdown then
-							Value:SetOpen(false)
+							Value:CloseInstant()
 						end
 					end
 
@@ -5009,6 +4991,32 @@ do
 					Items["OptionHolder"].Instance.Parent = not Dropdown.IsOpen and Library.UnusedHolder.Instance
 						or Library.Holder.Instance
 				end)
+			end
+
+			-- Snap this dropdown's option list shut instantly, with no fade-out.
+			-- Used when another dropdown opens: animating this one closed while the
+			-- new one animates open let both option lists be visible on screen at
+			-- once for ~0.2s, which is what caused the overlapping "ghost list" bug.
+			function Dropdown:CloseInstant()
+				if not Dropdown.IsOpen then
+					return
+				end
+
+				Dropdown.IsOpen = false
+				Debounce = false
+
+				if RenderStepped then
+					Library:Disconnect(RenderStepped.Name)
+					RenderStepped = nil
+				end
+
+				if Library.OpenFrames[Dropdown] then
+					Library.OpenFrames[Dropdown] = nil
+				end
+
+				Items["Chevron"].Instance.Rotation = 90
+				Items["OptionHolder"].Instance.Visible = false
+				Items["OptionHolder"].Instance.Parent = Library.UnusedHolder.Instance
 			end
 
 			function Dropdown:Add(Option)
