@@ -3161,6 +3161,17 @@ do
 				})
 				Items["TargetHud"]:AddToTheme({ BackgroundColor3 = "Background 1" })
 
+				-- On some devices the very first frame renders this in the wrong spot
+				-- (AnchorPoint/Position don't resolve cleanly until something forces a
+				-- re-layout - which is exactly what dragging does). Re-apply the same
+				-- position a moment after creation so it self-corrects without needing
+				-- the user to drag it first.
+				task.spawn(function()
+					task.wait()
+					RunService.RenderStepped:Wait()
+					Items["TargetHud"].Instance.Position = UDim2New(0.5, 0, 0.8, 0)
+				end)
+
 				Items["TargetHud"]:MakeDraggable()
 
 				Instances:Create("UIStroke", {
