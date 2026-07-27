@@ -3066,6 +3066,12 @@ do
 				})
 				Items["Notification"]:AddToTheme({ BackgroundColor3 = "Inline" })
 
+				Instances:Create("UICorner", {
+					Parent = Items["Notification"].Instance,
+					Name = "\0",
+					CornerRadius = UDimNew(0, 5),
+				})
+
 				Instances:Create("UIPadding", {
 					Parent = Items["Notification"].Instance,
 					Name = "\0",
