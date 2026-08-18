@@ -3028,4 +3028,35 @@
 	-- 
 -- 
 
+
+    -- Mobile/Desktop library toggle button.
+    -- Reuses the existing button when possible and never removes it.
+    function library:SetupToggleButton(button)
+        if button then
+            library.toggle_button = button
+        end
+
+        local toggle = library.toggle_button
+        if not toggle then
+            return nil
+        end
+
+        toggle.Active = true
+        toggle.Visible = true
+        toggle.AutoButtonColor = true
+
+        if not toggle:GetAttribute("MobileToggleBound") then
+            toggle:SetAttribute("MobileToggleBound", true)
+
+            library:connection(toggle.InputBegan, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1
+                    or input.UserInputType == Enum.UserInputType.Touch then
+                    library:ToggleUI()
+                end
+            end)
+        end
+
+        return toggle
+    end
+
 return library, notifications
