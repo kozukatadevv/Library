@@ -214,61 +214,92 @@
             return Tween
         end
 
-        function library:resizify(frame) 
-            local Frame = Instance.new("TextButton")
-            Frame.Position = dim2(1, -10, 1, -10)
-            Frame.BorderColor3 = rgb(0, 0, 0)
-            Frame.Size = dim2(0, 10, 0, 10)
-            Frame.BorderSizePixel = 0
-            Frame.BackgroundColor3 = rgb(255, 255, 255)
-            Frame.Parent = frame
-            Frame.BackgroundTransparency = 1 
-            Frame.Text = ""
+        function library:resizify(frame)
+            -- Touch-friendly resize handle.
+            -- Intentionally does NOT clamp to the viewport.
+            if not frame or not frame:IsA("GuiObject") then
+                return
+            end
 
-            local resizing = false 
-            local start_size 
-            local start 
-            local og_size = frame.Size  
+            local handle = Instance.new("TextButton")
+            handle.Name = "\0"
+            handle.AnchorPoint = vec2(1, 1)
+            handle.Position = dim2(1, 0, 1, 0)
+            handle.Size = IsMobile and dim_offset(26, 26) or dim_offset(12, 12)
+            handle.BackgroundTransparency = 1
+            handle.BorderSizePixel = 0
+            handle.Text = ""
+            handle.AutoButtonColor = false
+            handle.ZIndex = frame.ZIndex + 100
+            handle.Parent = frame
 
-            Frame.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    resizing = true
-                    start = input.Position
-                    start_size = frame.Size
+            local resizing = false
+            local active_input
+            local start_position
+            local start_size
+            local connection
+
+            local function begin_resize(input)
+                if input.UserInputType ~= Enum.UserInputType.MouseButton1
+                    and input.UserInputType ~= Enum.UserInputType.Touch then
+                    return
                 end
-            end)
 
-            Frame.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                resizing = true
+                active_input = input
+                start_position = input.Position
+                start_size = frame.Size
+            end
+
+            local function end_resize(input)
+                if not resizing then
+                    return
+                end
+
+                if input == active_input
+                    or input.UserInputType == Enum.UserInputType.MouseButton1
+                    or input.UserInputType == Enum.UserInputType.Touch then
                     resizing = false
+                    active_input = nil
+                end
+            end
+
+            connection = uis.InputChanged:Connect(function(input)
+                if not resizing or not frame.Parent then
+                    return
+                end
+
+                if input.UserInputType ~= Enum.UserInputType.MouseMovement
+                    and input.UserInputType ~= Enum.UserInputType.Touch then
+                    return
+                end
+
+                -- Offset-only resizing keeps the original Scale untouched.
+                -- There is deliberately no viewport clamp here.
+                local delta = input.Position - start_position
+                frame.Size = dim2(
+                    start_size.X.Scale,
+                    start_size.X.Offset + delta.X,
+                    start_size.Y.Scale,
+                    start_size.Y.Offset + delta.Y
+                )
+            end)
+
+            handle.InputBegan:Connect(begin_resize)
+            handle.InputEnded:Connect(end_resize)
+
+            -- Make the handle easier to hit on phones without changing the visual UI.
+            library:connection(handle.AncestryChanged, function(_, parent)
+                if not parent then
+                    if connection then
+                        connection:Disconnect()
+                        connection = nil
+                    end
                 end
             end)
 
-            library:connection(uis.InputChanged, function(input, game_event) 
-                if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    local viewport_x = camera.ViewportSize.X
-                    local viewport_y = camera.ViewportSize.Y
-
-                    local current_size = dim2(
-                        start_size.X.Scale,
-                        math.clamp(
-                            start_size.X.Offset + (input.Position.X - start.X),
-                            og_size.X.Offset,
-                            viewport_x
-                        ),
-                        start_size.Y.Scale,
-                        math.clamp(
-                            start_size.Y.Offset + (input.Position.Y - start.Y),
-                            og_size.Y.Offset,
-                            viewport_y
-                        )
-                    )
-
-                    -- library:tween(frame, {Size = current_size}, Enum.EasingStyle.Linear, 0.05) -- nobody will ntoice this aswell 👿
-                    frame.Size = current_size
-                end
-            end)
-        end 
+            return handle
+        end
 
         function library:mouse_in_frame(uiobject)
             local y_cond = uiobject.AbsolutePosition.Y <= mouse.Y and mouse.Y <= uiobject.AbsolutePosition.Y + uiobject.AbsoluteSize.Y
@@ -278,50 +309,68 @@
         end
 
         function library:draggify(frame)
-            local dragging = false 
-            local start_size = frame.Position
-            local start 
+            -- Smooth mouse + touch dragging with no viewport clamping.
+            if not frame or not frame:IsA("GuiObject") then
+                return
+            end
 
-            frame.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = true
-                    start = input.Position
-                    start_size = frame.Position
+            local dragging = false
+            local active_input
+            local start_input_position
+            local start_frame_position
+
+            local function begin_drag(input)
+                if input.UserInputType ~= Enum.UserInputType.MouseButton1
+                    and input.UserInputType ~= Enum.UserInputType.Touch then
+                    return
                 end
-            end)
 
-            frame.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                active_input = input
+                start_input_position = input.Position
+                start_frame_position = frame.Position
+            end
+
+            local function end_drag(input)
+                if not dragging then
+                    return
+                end
+
+                if input == active_input
+                    or input.UserInputType == Enum.UserInputType.MouseButton1
+                    or input.UserInputType == Enum.UserInputType.Touch then
                     dragging = false
+                    active_input = nil
                 end
+            end
+
+            frame.InputBegan:Connect(begin_drag)
+            frame.InputEnded:Connect(end_drag)
+
+            library:connection(uis.InputChanged, function(input)
+                if not dragging or not frame.Parent then
+                    return
+                end
+
+                if input.UserInputType ~= Enum.UserInputType.MouseMovement
+                    and input.UserInputType ~= Enum.UserInputType.Touch then
+                    return
+                end
+
+                local delta = input.Position - start_input_position
+
+                -- No clamp: the window can be moved anywhere, including
+                -- partially or completely outside the viewport.
+                frame.Position = dim2(
+                    start_frame_position.X.Scale,
+                    start_frame_position.X.Offset + delta.X,
+                    start_frame_position.Y.Scale,
+                    start_frame_position.Y.Offset + delta.Y
+                )
             end)
 
-            library:connection(uis.InputChanged, function(input, game_event) 
-                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    local viewport_x = camera.ViewportSize.X
-                    local viewport_y = camera.ViewportSize.Y
-
-                    local current_position = dim2(
-                        0,
-                        clamp(
-                            start_size.X.Offset + (input.Position.X - start.X),
-                            0,
-                            viewport_x - frame.Size.X.Offset
-                        ),
-                        0,
-                        math.clamp(
-                            start_size.Y.Offset + (input.Position.Y - start.Y),
-                            0,
-                            viewport_y - frame.Size.Y.Offset
-                        )
-                    )
-
-                    -- library:tween(frame, {Position = current_position}, Enum.EasingStyle.Linear, 0) -- heh, nobody will notice 
-                    frame.Position = current_position
-                    library:close_current_element(nil) 
-                end
-            end)
-        end 
+            return frame
+        end
 
         function library:convert(str)
             local values = {}
@@ -582,48 +631,114 @@
                 });                
             end 
 
-            -- Mobile support: UIScale and toggle button
+            -- Mobile support: keep the existing toggle button and make it
+            -- properly draggable/responsive to touch. No UIScale is used,
+            -- because UIScale makes resize/drag coordinates feel inconsistent.
             if IsMobile then
-                library:create("UIScale", {
-                    Parent = items["window"];
-                    Scale = 0.72;
-                });
-
                 local ToggleOpen = false
+
                 local HideShowGui = library:create("ScreenGui", {
                     Parent = coregui;
                     Name = "\0";
                     ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
                     IgnoreGuiInset = true;
-                });
-                library["mobile_gui"] = HideShowGui;
+                    ResetOnSpawn = false;
+                })
+
+                library["mobile_gui"] = HideShowGui
 
                 local HideShowButton = library:create("ImageButton", {
                     Parent = HideShowGui;
                     Name = "ToggleButton";
                     BackgroundTransparency = 1;
-                    Size = dim2(0, 57, 0, 57);
-                    Position = dim2(0.5, -75, 0.6, -25);
+                    Size = dim_offset(57, 57);
+                    Position = dim2(0.5, -28, 0.6, -28);
                     Image = "rbxassetid://84435108807782";
-                    Draggable = true;
-                });
+                    AutoButtonColor = false;
+                    Active = true;
+                    ZIndex = 10000;
+                })
 
                 library:create("UICorner", {
                     Parent = HideShowButton;
                     CornerRadius = dim(0, 8);
-                });
+                })
 
                 library:create("UIStroke", {
                     Parent = HideShowButton;
                     Thickness = 1.95;
                     Color = rgb(255, 191, 36);
                     ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
-                });
+                })
+
+                -- Touch/mouse dragging for the existing button.
+                -- A small movement threshold keeps normal taps as clicks.
+                local button_dragging = false
+                local button_moved = false
+                local button_input
+                local button_start
+                local button_position
+                local BUTTON_DRAG_THRESHOLD = 8
+
+                HideShowButton.InputBegan:Connect(function(input)
+                    if input.UserInputType ~= Enum.UserInputType.Touch
+                        and input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+                        return
+                    end
+
+                    button_dragging = true
+                    button_moved = false
+                    button_input = input
+                    button_start = input.Position
+                    button_position = HideShowButton.Position
+                end)
+
+                HideShowButton.InputEnded:Connect(function(input)
+                    if input == button_input
+                        or input.UserInputType == Enum.UserInputType.Touch
+                        or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        button_dragging = false
+                        button_input = nil
+                    end
+                end)
+
+                library:connection(uis.InputChanged, function(input)
+                    if not button_dragging then
+                        return
+                    end
+
+                    if input.UserInputType ~= Enum.UserInputType.Touch
+                        and input.UserInputType ~= Enum.UserInputType.MouseMovement then
+                        return
+                    end
+
+                    local delta = input.Position - button_start
+
+                    if math.abs(delta.X) > BUTTON_DRAG_THRESHOLD
+                        or math.abs(delta.Y) > BUTTON_DRAG_THRESHOLD then
+                        button_moved = true
+                    end
+
+                    -- No clamp here either. The button can be placed anywhere.
+                    HideShowButton.Position = dim2(
+                        button_position.X.Scale,
+                        button_position.X.Offset + delta.X,
+                        button_position.Y.Scale,
+                        button_position.Y.Offset + delta.Y
+                    )
+                end)
 
                 HideShowButton.MouseButton1Click:Connect(function()
+                    -- Clicking still works exactly like before.
+                    if button_moved then
+                        return
+                    end
+
                     ToggleOpen = not ToggleOpen
                     cfg.toggle_menu(ToggleOpen)
                 end)
+
+                library["mobile_toggle_button"] = HideShowButton
             end
 
             do -- Other
