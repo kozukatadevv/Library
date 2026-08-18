@@ -1194,29 +1194,35 @@
             return setmetatable(cfg, library)
         end 
         
-        function library:Slider(options) 
+        function library:Slider(options)
             local cfg = {
                 -- Options
                 name = options.name or options.Name or nil;
                 suffix = options.suffix or options.Suffix or "";
                 flag = options.flag or options.Flag or options.name or options.Name or "please set me a flag 🥺";
-                callback = options.callback or options.Callback or function() end; 
-                show_value = options.ShowValue or options.show_value or true; 
+                callback = options.callback or options.Callback or function() end;
+                show_value = options.ShowValue ~= nil and options.ShowValue or (options.show_value ~= nil and options.show_value or true);
 
-                -- value settings
+                -- Value settings
                 min = options.min or options.minimum or options.Min or options.Minimum or 0;
                 max = options.max or options.maximum or options.Max or options.Maximum or 100;
                 intervals = options.interval or options.decimal or options.Interval or options.Decimal or 1;
                 default = options.default or options.Default or 10;
-                value = options.default or options.default or 10; 
+                value = options.default or options.Default or 10;
 
-                -- ignore
+                -- State
                 dragging = false;
+                active_input = nil;
                 items = {}
-            } 
+            }
+
+            -- Prevent a broken range from producing NaN.
+            if cfg.max < cfg.min then
+                cfg.min, cfg.max = cfg.max, cfg.min
+            end
 
             local items = cfg.items; do
-                items[ "object" ] = library:create( "Frame" , {
+                items["object"] = library:create("Frame", {
                     Parent = self.items.object or self.items.elements;
                     Name = "\0";
                     BackgroundTransparency = 1;
@@ -1226,28 +1232,30 @@
                     AutomaticSize = Enum.AutomaticSize.XY;
                     BackgroundColor3 = rgb(255, 255, 255)
                 });
-                
-                library:create( "UIListLayout" , {
-                    Parent = items[ "object" ];
+
+                library:create("UIListLayout", {
+                    Parent = items["object"];
                     Padding = dim(0, 5);
                     SortOrder = Enum.SortOrder.LayoutOrder;
                     FillDirection = Enum.FillDirection.Horizontal
                 });
-                
-                items[ "slider_parent" ] = library:create( "TextButton" , {
-                    Parent = items[ "object" ];
+
+                items["slider_parent"] = library:create("TextButton", {
+                    Parent = items["object"];
                     BackgroundTransparency = 1;
                     Text = "";
                     Name = "\0";
                     BorderColor3 = rgb(0, 0, 0);
                     Size = dim2(0, 100, 1, 0);
                     BorderSizePixel = 0;
-                    BackgroundColor3 = rgb(255, 255, 255)
+                    BackgroundColor3 = rgb(255, 255, 255);
+                    AutoButtonColor = false;
+                    Active = true;
                 });
-                
-                items[ "slider_holder" ] = library:create( "Frame" , {
+
+                items["slider_holder"] = library:create("Frame", {
                     AnchorPoint = vec2(0, 0.5);
-                    Parent = items[ "slider_parent" ];
+                    Parent = items["slider_parent"];
                     Name = "\0";
                     Position = dim2(0, 0, 0.5, 0);
                     BorderColor3 = rgb(0, 0, 0);
@@ -1255,9 +1263,9 @@
                     BorderSizePixel = 0;
                     BackgroundColor3 = rgb(0, 0, 0)
                 });
-                
-                items[ "gradient_holder" ] = library:create( "Frame" , {
-                    Parent = items[ "slider_holder" ];
+
+                items["gradient_holder"] = library:create("Frame", {
+                    Parent = items["slider_holder"];
                     Name = "\0";
                     Position = dim2(0, 1, 0, 1);
                     BorderColor3 = rgb(0, 0, 0);
@@ -1265,15 +1273,15 @@
                     BorderSizePixel = 0;
                     BackgroundColor3 = rgb(255, 255, 255)
                 });
-                
-                library:create( "UIGradient" , {
+
+                library:create("UIGradient", {
                     Color = rgbseq{rgbkey(0, rgb(255, 255, 255)), rgbkey(1, rgb(93, 93, 93))};
-                    Parent = items[ "gradient_holder" ]
+                    Parent = items["gradient_holder"]
                 });
-                
-                items[ "slider" ] = library:create( "Frame" , {
+
+                items["slider"] = library:create("Frame", {
                     AnchorPoint = vec2(0, 0.5);
-                    Parent = items[ "gradient_holder" ];
+                    Parent = items["gradient_holder"];
                     Name = "\0";
                     Position = dim2(0, 0, 0.5, 0);
                     BorderColor3 = rgb(0, 0, 0);
@@ -1281,9 +1289,9 @@
                     BorderSizePixel = 0;
                     BackgroundColor3 = rgb(0, 0, 0)
                 });
-                
-                items[ "inline" ] = library:create( "Frame" , {
-                    Parent = items[ "slider" ];
+
+                items["inline"] = library:create("Frame", {
+                    Parent = items["slider"];
                     Name = "\0";
                     Position = dim2(0, 1, 0, 1);
                     BorderColor3 = rgb(0, 0, 0);
@@ -1291,52 +1299,126 @@
                     BorderSizePixel = 0;
                     BackgroundColor3 = rgb(255, 255, 255)
                 });
-                
+
                 if cfg.name then
-                    items[ "name" ] = setmetatable(cfg, library):Label({padding_top = 1})
+                    items["name"] = setmetatable(cfg, library):Label({padding_top = 1})
                 end
 
-                if cfg.show_value then 
-                    items[ "value" ] = setmetatable(cfg, library):Label({padding_top = 1})
-                end       
-            end 
+                if cfg.show_value then
+                    items["value"] = setmetatable(cfg, library):Label({padding_top = 1})
+                end
+            end
+
+            -- Convert a screen X coordinate into a slider value.
+            -- This is intentionally calculated from AbsolutePosition/AbsoluteSize,
+            -- so it works correctly with both mouse and touch input.
+            local function value_from_input(input)
+                local track = items["gradient_holder"]
+
+                if not track or track.AbsoluteSize.X <= 0 then
+                    return cfg.value
+                end
+
+                local x = input.Position.X
+                local left = track.AbsolutePosition.X
+                local width = track.AbsoluteSize.X
+
+                local percent = (x - left) / width
+                percent = clamp(percent, 0, 1)
+
+                return cfg.min + ((cfg.max - cfg.min) * percent)
+            end
 
             function cfg.set(value)
-                cfg.value = clamp(library:round(value, cfg.intervals), cfg.min, cfg.max)
-                
-                items[ "slider" ].Position = dim2((cfg.value - cfg.min) / (cfg.max - cfg.min), 0, 0.5, 0)
+                if cfg.max == cfg.min then
+                    cfg.value = cfg.min
+                else
+                    cfg.value = clamp(
+                        library:round(value, cfg.intervals),
+                        cfg.min,
+                        cfg.max
+                    )
+                end
 
-                if items[ "value" ] then
-                    items[ "value" ].set(tostring(cfg.value) .. cfg.suffix)
+                local percent = cfg.max == cfg.min
+                    and 0
+                    or (cfg.value - cfg.min) / (cfg.max - cfg.min)
+
+                items["slider"].Position = dim2(percent, 0, 0.5, 0)
+
+                if items["value"] then
+                    items["value"].set(tostring(cfg.value) .. cfg.suffix)
                 end
 
                 flags[cfg.flag] = cfg.value
                 cfg.callback(flags[cfg.flag])
             end
 
-            items[ "slider_parent" ].MouseButton1Down:Connect(function()
-                cfg.dragging = true 
-            end)
+            local function begin_drag(input)
+                if input.UserInputType ~= Enum.UserInputType.MouseButton1
+                    and input.UserInputType ~= Enum.UserInputType.Touch then
+                    return
+                end
+
+                cfg.dragging = true
+                cfg.active_input = input
+
+                -- Update immediately on tap, rather than waiting for movement.
+                cfg.set(value_from_input(input))
+            end
+
+            local function update_drag(input)
+                if not cfg.dragging then
+                    return
+                end
+
+                if input.UserInputType == Enum.UserInputType.MouseMovement then
+                    cfg.set(value_from_input(input))
+                elseif input.UserInputType == Enum.UserInputType.Touch then
+                    -- Only follow the touch that started this slider drag.
+                    if cfg.active_input == nil or input == cfg.active_input then
+                        cfg.set(value_from_input(input))
+                    end
+                end
+            end
+
+            local function end_drag(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    cfg.dragging = false
+                    cfg.active_input = nil
+                elseif input.UserInputType == Enum.UserInputType.Touch then
+                    if cfg.active_input == nil or input == cfg.active_input then
+                        cfg.dragging = false
+                        cfg.active_input = nil
+                    end
+                end
+            end
+
+            -- InputBegan works reliably for both desktop clicks and mobile touches.
+            library:connection(items["slider_parent"].InputBegan, begin_drag)
 
             library:connection(uis.InputChanged, function(input)
-                if cfg.dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then 
-                    local size_x = (input.Position.X - items[ "gradient_holder" ].AbsolutePosition.X) / items[ "gradient_holder" ].AbsoluteSize.X
-                    local value = ((cfg.max - cfg.min) * size_x) + cfg.min
-                    cfg.set(value)
-                end
+                update_drag(input)
             end)
 
             library:connection(uis.InputEnded, function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    cfg.dragging = false
-                end 
+                end_drag(input)
             end)
-            
+
+            -- Keep the slider responsive if the UI is resized while dragging.
+            library:connection(run.RenderStepped, function()
+                if cfg.dragging and cfg.active_input
+                    and cfg.active_input.UserInputType == Enum.UserInputType.Touch then
+                    -- The touch's Position is updated by Roblox while it is held.
+                    cfg.set(value_from_input(cfg.active_input))
+                end
+            end)
+
             cfg.set(cfg.default)
             config_flags[cfg.flag] = cfg.set
 
             return setmetatable(cfg, library)
-        end 
+        end
 
         function library:Dropdown(options) 
             local cfg = {
