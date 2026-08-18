@@ -320,6 +320,9 @@
             local start_frame_position
 
             local function begin_drag(input)
+                local target = input.Target
+                if target and target:IsA("TextBox") then return end
+                
                 if input.UserInputType ~= Enum.UserInputType.MouseButton1
                     and input.UserInputType ~= Enum.UserInputType.Touch then
                     return
@@ -900,7 +903,37 @@
             return setmetatable(cfg, library)
         end
 
-        function library:Section(properties)
+            -- TextBox input handling.
+    -- TextBoxes must receive keyboard/touch focus before any global UI
+    -- drag/resize logic is allowed to react to the input.
+    function library:BindTextBox(box)
+        if not box then
+            return
+        end
+
+        box.Active = true
+        box.Selectable = true
+        box.ClearTextOnFocus = false
+
+        library:connection(box.InputBegan, function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                box:CaptureFocus()
+            end
+        end)
+
+        library:connection(box.Focused, function()
+            box:SetAttribute("LibraryTextBoxFocused", true)
+        end)
+
+        library:connection(box.FocusLost, function()
+            box:SetAttribute("LibraryTextBoxFocused", false)
+        end)
+
+        return box
+    end
+
+function library:Section(properties)
             local cfg = {
                 name = properties.name or properties.Name or "section"; 
                 side = properties.side or properties.Side or "left";
@@ -1355,6 +1388,9 @@
             end
 
             local function begin_drag(input)
+                local target = input.Target
+                if target and target:IsA("TextBox") then return end
+                
                 if input.UserInputType ~= Enum.UserInputType.MouseButton1
                     and input.UserInputType ~= Enum.UserInputType.Touch then
                     return
@@ -2283,6 +2319,9 @@
                 });
                 
                 items[ "textbox" ] = library:create( "TextBox" , {
+                    Active = true;
+                    Selectable = true;
+                    ClearTextOnFocus = false;
                     FontFace = library.font;
                     Active = false;
                     Selectable = false;
