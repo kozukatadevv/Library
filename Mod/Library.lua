@@ -1,10 +1,6 @@
---[[
+-- Made by linemaster3
+-- Modifyed for mobile (atzlazyblue the skibidi modifyer)
 
-]]
-
-
-
-local Drawing = loadstring(game:HttpGet("https://raw.githubusercontent.com/linemaster2/storage/main/Drawing.lua"))();
 
 local Library = {};
 do
@@ -83,7 +79,10 @@ do
 	-- // Ignores
 	local Flags = {} -- Ignore
 	local ColorHolders = {}
-
+	
+	for i = 1, 10 do
+	    print("Starhook Mobile (atzlazyblue): Loaded!")
+	end;
 
 	-- // Extension
 	Library.__index = Library
@@ -93,7 +92,8 @@ do
 	local Mouse = LocalPlayer:GetMouse();
 	local Players = game:GetService("Players")
 	local TweenService = game:GetService("TweenService")
-
+    local UserInputService = game:GetService("UserInputService")
+    
 	-- // Misc Functions
 	do
 		function Library:Connection(signal, Callback)
@@ -264,331 +264,369 @@ do
 
 			return false;
 		end;
+		--
+		function MakeDraggable(Instance)
+		    local Dragging
+		    local DragInput
+		    local StartPosition
+		    local StartMousePosition
+		    
+		    local function UpdateInput(input)
+		        local delta = input.Position - StartMousePosition
+		        Instance.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + delta.Y)
+		    end
+		
+		    Instance.InputBegan:Connect(function(input)
+		        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		            Dragging = true
+		            StartMousePosition = input.Position
+		            StartPosition = Instance.Position
+		            
+		            input.Changed:Connect(function()
+		                if input.UserInputState == Enum.UserInputState.End then
+		                    Dragging = false
+		                end
+		            end)
+		        end
+		    end)
+		    
+		    Instance.InputChanged:Connect(function(input)
+		        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		            DragInput = input
+		        end
+		    end)
+		    
+		    game:GetService("UserInputService").InputChanged:Connect(function(input)
+		        if Dragging and input == DragInput then
+		            UpdateInput(input)
+		        end
+		    end)
+		end;
 	end
-
 	-- // Colorpicker Element
-	do
-		function Library:NewPicker(name, default, parent, count, flag, callback)
-			-- // Instances
-			local ColorpickerFrame = Instance.new("TextButton")
-			ColorpickerFrame.Name = "Colorpicker_frame"
-			ColorpickerFrame.BackgroundColor3 = default
-			ColorpickerFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			ColorpickerFrame.BorderSizePixel = 0
-			if count == 1 then
-				ColorpickerFrame.Position = UDim2.new(1, - (count * 20),0.5,0)
-			else
-				ColorpickerFrame.Position = UDim2.new(1, - (count * 20) - (count * 4),0.5,0)
-			end
-			ColorpickerFrame.Size = UDim2.new(0, 20, 0, 20)
-			ColorpickerFrame.AnchorPoint = Vector2.new(0,0.5)
-			ColorpickerFrame.Text = ""
-			ColorpickerFrame.AutoButtonColor = false
+    do
+        function Library:NewPicker(name, default, parent, count, flag, callback)
+            -- // Instances
+            local ColorpickerFrame = Instance.new("TextButton")
+            ColorpickerFrame.Name = "Colorpicker_frame"
+            ColorpickerFrame.BackgroundColor3 = default
+            ColorpickerFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+            ColorpickerFrame.BorderSizePixel = 0
+            if count == 1 then
+                ColorpickerFrame.Position = UDim2.new(1, - (count * 20),0.5,0)
+            else
+                ColorpickerFrame.Position = UDim2.new(1, - (count * 20) - (count * 4),0.5,0)
+            end
+            ColorpickerFrame.Size = UDim2.new(0, 20, 0, 20)
+            ColorpickerFrame.AnchorPoint = Vector2.new(0,0.5)
+            ColorpickerFrame.Text = ""
+            ColorpickerFrame.AutoButtonColor = false
 
-			local UICorner = Instance.new("UICorner")
-			UICorner.Name = "UICorner"
-			UICorner.CornerRadius = UDim.new(0, 4)
-			UICorner.Parent = ColorpickerFrame
+            local UICorner = Instance.new("UICorner")
+            UICorner.Name = "UICorner"
+            UICorner.CornerRadius = UDim.new(0, 4)
+            UICorner.Parent = ColorpickerFrame
 
-			local UIStroke = Instance.new("UIStroke")
-			UIStroke.Name = "UIStroke"
-			UIStroke.Color = Color3.fromRGB(40, 40, 40)
-			UIStroke.Parent = ColorpickerFrame
+            local UIStroke = Instance.new("UIStroke")
+            UIStroke.Name = "UIStroke"
+            UIStroke.Color = Color3.fromRGB(40, 40, 40)
+            UIStroke.Parent = ColorpickerFrame
 
-			ColorpickerFrame.Parent = parent
+            ColorpickerFrame.Parent = parent
 
-			local Colorpicker = Instance.new("TextButton")
-			Colorpicker.Name = "Colorpicker"
-			Colorpicker.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-			Colorpicker.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			Colorpicker.BorderSizePixel = 0
-			Colorpicker.Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y - 50)
-			Colorpicker.Size = UDim2.new(0, 180, 0, 180)
-			Colorpicker.Parent = Library.ScreenGUI
-			Colorpicker.ZIndex = 100
-			Colorpicker.Visible = false
-			Colorpicker.Text = ""
-			Colorpicker.AutoButtonColor = false
-			local H,S,V = default:ToHSV()
-			local ImageLabel = Instance.new("ImageLabel")
-			ImageLabel.Name = "ImageLabel"
-			ImageLabel.Image = "rbxassetid://11970108040"
-			ImageLabel.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
-			ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			ImageLabel.BorderSizePixel = 0
-			ImageLabel.Position = UDim2.new(0.0556, 0, 0.026, 0)
-			ImageLabel.Size = UDim2.new(0, 160, 0, 154)
-			ImageLabel.Parent = Colorpicker
+            local Colorpicker = Instance.new("TextButton")
+            Colorpicker.Name = "Colorpicker"
+            Colorpicker.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            Colorpicker.BorderColor3 = Color3.fromRGB(0, 0, 0)
+            Colorpicker.BorderSizePixel = 0
+            Colorpicker.Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y - 50)
+            Colorpicker.Size = UDim2.new(0, 180, 0, 180)
+            Colorpicker.Parent = Library.ScreenGUI
+            Colorpicker.ZIndex = 100
+            Colorpicker.Visible = false
+            Colorpicker.Text = ""
+            Colorpicker.AutoButtonColor = false
+            local H,S,V = default:ToHSV()
+            local ImageLabel = Instance.new("ImageLabel")
+            ImageLabel.Name = "ImageLabel"
+            ImageLabel.Image = "rbxassetid://11970108040"
+            ImageLabel.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
+            ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+            ImageLabel.BorderSizePixel = 0
+            ImageLabel.Position = UDim2.new(0.0556, 0, 0.026, 0)
+            ImageLabel.Size = UDim2.new(0, 160, 0, 154)
+            ImageLabel.Parent = Colorpicker
 
-			local UICorner = Instance.new("UICorner")
-			UICorner.Name = "UICorner"
-			UICorner.CornerRadius = UDim.new(0, 6)
-			UICorner.Parent = Colorpicker
+            local UICorner = Instance.new("UICorner")
+            UICorner.Name = "UICorner"
+            UICorner.CornerRadius = UDim.new(0, 6)
+            UICorner.Parent = Colorpicker
 
-			local ImageButton = Instance.new("ImageButton")
-			ImageButton.Name = "ImageButton"
-			ImageButton.Image = "rbxassetid://14684562507"
-			ImageButton.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
-			ImageButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			ImageButton.BorderSizePixel = 0
-			ImageButton.Position = UDim2.new(0.056, 0, 0.026, 0)
-			ImageButton.Size = UDim2.new(0, 160, 0, 154)
-			ImageButton.AutoButtonColor = false
+            local ImageButton = Instance.new("ImageButton")
+            ImageButton.Name = "ImageButton"
+            ImageButton.Image = "rbxassetid://14684562507"
+            ImageButton.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
+            ImageButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+            ImageButton.BorderSizePixel = 0
+            ImageButton.Position = UDim2.new(0.056, 0, 0.026, 0)
+            ImageButton.Size = UDim2.new(0, 160, 0, 154)
+            ImageButton.AutoButtonColor = false
 
-			local SVSlider = Instance.new("Frame")
-			SVSlider.Name = "SV_slider"
-			SVSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			SVSlider.BackgroundTransparency = 1
-			SVSlider.ClipsDescendants = true
-			SVSlider.Position = UDim2.new(0.855, 0, 0.0966, 0)
-			SVSlider.Size = UDim2.new(0,7,0,7)
-			SVSlider.ZIndex = 3
+            local SVSlider = Instance.new("Frame")
+            SVSlider.Name = "SV_slider"
+            SVSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            SVSlider.BackgroundTransparency = 1
+            SVSlider.ClipsDescendants = true
+            SVSlider.Position = UDim2.new(0.855, 0, 0.0966, 0)
+            SVSlider.Size = UDim2.new(0,7,0,7)
+            SVSlider.ZIndex = 3
 
-			local Val = Instance.new("ImageLabel")
-			Val.Name = "Val"
-			Val.Image = "http://www.roblox.com/asset/?id=14684563800"
-			Val.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			Val.BackgroundTransparency = 1
-			Val.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			Val.BorderSizePixel = 0
-			Val.Size = UDim2.new(1, 0, 1, 0)
-			Val.Parent = ImageButton
+            local Val = Instance.new("ImageLabel")
+            Val.Name = "Val"
+            Val.Image = "http://www.roblox.com/asset/?id=14684563800"
+            Val.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Val.BackgroundTransparency = 1
+            Val.BorderColor3 = Color3.fromRGB(0, 0, 0)
+            Val.BorderSizePixel = 0
+            Val.Size = UDim2.new(1, 0, 1, 0)
+            Val.Parent = ImageButton
 
-			local UICorner1 = Instance.new("UICorner")
-			UICorner1.Name = "UICorner"
-			UICorner1.CornerRadius = UDim.new(0, 100)
-			UICorner1.Parent = SVSlider
+            local UICorner1 = Instance.new("UICorner")
+            UICorner1.Name = "UICorner"
+            UICorner1.CornerRadius = UDim.new(0, 100)
+            UICorner1.Parent = SVSlider
 
-			local UIStroke = Instance.new("UIStroke")
-			UIStroke.Name = "UIStroke"
-			UIStroke.Color = Color3.fromRGB(255, 255, 255)
-			UIStroke.Parent = SVSlider
+            local UIStroke = Instance.new("UIStroke")
+            UIStroke.Name = "UIStroke"
+            UIStroke.Color = Color3.fromRGB(255, 255, 255)
+            UIStroke.Parent = SVSlider
 
-			SVSlider.Parent = ImageButton
+            SVSlider.Parent = ImageButton
 
-			ImageButton.Parent = Colorpicker
+            ImageButton.Parent = Colorpicker
 
-			local ImageButton1 = Instance.new("ImageButton")
-			ImageButton1.Name = "ImageButton"
-			ImageButton1.Image = "http://www.roblox.com/asset/?id=16789872274"
-			ImageButton1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			ImageButton1.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			ImageButton1.BorderSizePixel = 0
-			ImageButton1.Position = UDim2.new(0.5, 0,0, 165)
-			ImageButton1.Size = UDim2.new(0, 160,0, 8)
-			ImageButton1.AutoButtonColor = false
-			ImageButton1.AnchorPoint = Vector2.new(0.5,0)
-			ImageButton1.BackgroundTransparency = 1
+            local ImageButton1 = Instance.new("ImageButton")
+            ImageButton1.Name = "ImageButton"
+            ImageButton1.Image = "http://www.roblox.com/asset/?id=16789872274"
+            ImageButton1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            ImageButton1.BorderColor3 = Color3.fromRGB(0, 0, 0)
+            ImageButton1.BorderSizePixel = 0
+            ImageButton1.Position = UDim2.new(0.5, 0,0, 165)
+            ImageButton1.Size = UDim2.new(0, 160,0, 8)
+            ImageButton1.AutoButtonColor = false
+            ImageButton1.AnchorPoint = Vector2.new(0.5,0)
+            ImageButton1.BackgroundTransparency = 1
 
-			local Frame = Instance.new("Frame")
-			Frame.Name = "Frame"
-			Frame.BackgroundColor3 = Color3.fromRGB(254, 254, 254)
-			Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			Frame.BorderSizePixel = 0
-			Frame.Position = UDim2.new(0.926, 0,0.5, 0)
-			Frame.Size = UDim2.new(0, 12,0, 12)
-			Frame.AnchorPoint = Vector2.new(0,0.5)
-			Frame.ZIndex = 45
+            local Frame = Instance.new("Frame")
+            Frame.Name = "Frame"
+            Frame.BackgroundColor3 = Color3.fromRGB(254, 254, 254)
+            Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+            Frame.BorderSizePixel = 0
+            Frame.Position = UDim2.new(0.926, 0,0.5, 0)
+            Frame.Size = UDim2.new(0, 12,0, 12)
+            Frame.AnchorPoint = Vector2.new(0,0.5)
+            Frame.ZIndex = 45
 
-			local UICorner2 = Instance.new("UICorner")
-			UICorner2.Name = "UICorner"
-			UICorner2.Parent = Frame
-			UICorner2.CornerRadius = UDim.new(1,0)
+            local UICorner2 = Instance.new("UICorner")
+            UICorner2.Name = "UICorner"
+            UICorner2.Parent = Frame
+            UICorner2.CornerRadius = UDim.new(1,0)
 
-			local UICorner3 = Instance.new("UICorner")
-			UICorner3.Name = "UICorner"
-			UICorner3.Parent = ImageButton1
+            local UICorner3 = Instance.new("UICorner")
+            UICorner3.Name = "UICorner"
+            UICorner3.Parent = ImageButton1
 
-			Frame.Parent = ImageButton1
+            Frame.Parent = ImageButton1
 
-			ImageButton1.Parent = Colorpicker
+            ImageButton1.Parent = Colorpicker
 
-			-- // Connections
-			local mouseover = false
-			local hue, sat, val = default:ToHSV()
-			local hsv = default:ToHSV()
-			local oldcolor = hsv
-			local slidingsaturation = false
-			local slidinghue = false
-			local slidingalpha = false
+            -- // Connections
+            local mouseover = false
+            local hue, sat, val = default:ToHSV()
+            local hsv = default:ToHSV()
+            local oldcolor = hsv
+            local slidingsaturation = false
+            local slidinghue = false
+            local slidingalpha = false
 
-			local function update()
-				local real_pos = game:GetService("UserInputService"):GetMouseLocation()
-				local mouse_position = Vector2.new(real_pos.X, real_pos.Y - 30)
-				local relative_palette = (mouse_position - ImageButton.AbsolutePosition)
-				local relative_hue     = (mouse_position - ImageButton1.AbsolutePosition)
-				--
-				if slidingsaturation then
-					sat = math.clamp(1 - relative_palette.X / ImageButton.AbsoluteSize.X, 0, 1)
-					val = math.clamp(1 - relative_palette.Y / ImageButton.AbsoluteSize.Y, 0, 1)
-				elseif slidinghue then
-					hue = math.clamp(relative_hue.X / ImageButton.AbsoluteSize.X, 0, 1)
-				end
+            local function update()
+                local real_pos = game:GetService("UserInputService"):GetMouseLocation()
+                local mouse_position = Vector2.new(real_pos.X, real_pos.Y - 30)
+                local relative_palette = (mouse_position - ImageButton.AbsolutePosition)
+                local relative_hue     = (mouse_position - ImageButton1.AbsolutePosition)
+                --
+                if slidingsaturation then
+                        sat = math.clamp(1 - relative_palette.X / ImageButton.AbsoluteSize.X, 0, 1)
+                        val = math.clamp(1 - relative_palette.Y / ImageButton.AbsoluteSize.Y, 0, 1)
+                elseif slidinghue then
+                        hue = math.clamp(relative_hue.X / ImageButton.AbsoluteSize.X, 0, 1)
+                end
 
-				hsv = Color3.fromHSV(hue, sat, val)
-				TweenService:Create(SVSlider, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(math.clamp(1 - sat, 0.000, 1 - 0.055), 0, math.clamp(1 - val, 0.000, 1 - 0.045), 0)}):Play()
-				ImageButton.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
-				ColorpickerFrame.BackgroundColor3 = hsv
+                hsv = Color3.fromHSV(hue, sat, val)
+                TweenService:Create(SVSlider, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(math.clamp(1 - sat, 0.000, 1 - 0.055), 0, math.clamp(1 - val, 0.000, 1 - 0.045), 0)}):Play()
+                ImageButton.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+                ColorpickerFrame.BackgroundColor3 = hsv
 
-				TweenService:Create(Frame, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(math.clamp(hue, 0.000, 0.982),-5,0.5,0)}):Play()
+                TweenService:Create(Frame, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(math.clamp(hue, 0.000, 0.982),-5,0.5,0)}):Play()
 
-				if flag then
-					Library.Flags[flag] = Color3.fromRGB(hsv.r * 255, hsv.g * 255, hsv.b * 255)
-				end
+                if flag then
+                        Library.Flags[flag] = Color3.fromRGB(hsv.r * 255, hsv.g * 255, hsv.b * 255)
+                end
 
-				callback(Color3.fromRGB(hsv.r * 255, hsv.g * 255, hsv.b * 255))
-			end
+                callback(Color3.fromRGB(hsv.r * 255, hsv.g * 255, hsv.b * 255))
+            end
 
-			local function set(color)
-				if type(color) == "table" then
-					color = Color3.fromHSV(color[1], color[2], color[3])
-				end
-				if type(color) == "string" then
-					color = Color3.fromHex(color)
-				end
+            local function set(color)
+                if type(color) == "table" then
+                        color = Color3.fromHSV(color[1], color[2], color[3])
+                end
+                if type(color) == "string" then
+                        color = Color3.fromHex(color)
+                end
 
-				local oldcolor = hsv
+                local oldcolor = hsv
 
-				hue, sat, val = color:ToHSV()
-				hsv = Color3.fromHSV(hue, sat, val)
+                hue, sat, val = color:ToHSV()
+                hsv = Color3.fromHSV(hue, sat, val)
 
-				if hsv ~= oldcolor then
-					ColorpickerFrame.BackgroundColor3 = hsv
-					TweenService:Create(SVSlider, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(math.clamp(1 - sat, 0.000, 1 - 0.055), 0, math.clamp(1 - val, 0.000, 1 - 0.045), 0)}):Play()
-					ImageButton.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
-					TweenService:Create(Frame, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(math.clamp(hue, 0.000, 0.982),-5,0.5,0)}):Play()
+                if hsv ~= oldcolor then
+                    ColorpickerFrame.BackgroundColor3 = hsv
+                    TweenService:Create(SVSlider, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(math.clamp(1 - sat, 0.000, 1 - 0.055), 0, math.clamp(1 - val, 0.000, 1 - 0.045), 0)}):Play()
+                    ImageButton.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+                    TweenService:Create(Frame, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(math.clamp(hue, 0.000, 0.982),-5,0.5,0)}):Play()
 
-					if flag then
-						Library.Flags[flag] = Color3.fromRGB(hsv.r * 255, hsv.g * 255, hsv.b * 255)
-					end
+                    if flag then
+                            Library.Flags[flag] = Color3.fromRGB(hsv.r * 255, hsv.g * 255, hsv.b * 255)
+                    end
 
-					callback(Color3.fromRGB(hsv.r * 255, hsv.g * 255, hsv.b * 255))
-				end
-			end
+                    callback(Color3.fromRGB(hsv.r * 255, hsv.g * 255, hsv.b * 255))
+                end
+            end
 
-			Flags[flag] = set
+            Flags[flag] = set
 
-			set(default)
+            set(default)
 
-			ImageButton.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					slidingsaturation = true
-					update()
-				end
+            ImageButton.InputBegan:Connect(function(input)
+			    if input.UserInputType == Enum.UserInputType.MouseButton1 or
+			       input.UserInputType == Enum.UserInputType.Touch then
+			        slidingsaturation = true
+			        update()
+			    end
 			end)
-
+			
 			ImageButton.InputEnded:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					slidingsaturation = false
-					update()
-				end
+			    if input.UserInputType == Enum.UserInputType.MouseButton1 or
+			       input.UserInputType == Enum.UserInputType.Touch then
+			        slidingsaturation = false
+			        update()
+			    end
 			end)
-
+			
 			ImageButton1.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					slidinghue = true
-					update()
-				end
+			    if input.UserInputType == Enum.UserInputType.MouseButton1 or
+			       input.UserInputType == Enum.UserInputType.Touch then
+			        slidinghue = true
+			        update()
+			    end
 			end)
-
+			
 			ImageButton1.InputEnded:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					slidinghue = false
-					update()
-				end
+			    if input.UserInputType == Enum.UserInputType.MouseButton1 or
+			       input.UserInputType == Enum.UserInputType.Touch then
+			        slidinghue = false
+			        update()
+			    end
 			end)
 
-			Library:Connection(game:GetService("UserInputService").InputChanged, function(input)
-				if input.UserInputType == Enum.UserInputType.MouseMovement then
-					if slidinghue then
-						update()
-					end
+            Library:Connection(game:GetService("UserInputService").InputChanged, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement then
+                    if slidinghue then
+                        update()
+                    end
 
-					if slidingsaturation then
-						update()
-					end
-				end
-			end)
+                    if slidingsaturation then
+                        update()
+                    end
+                end
+            end)
 
-			local colorpickertypes = {}
+            local colorpickertypes = {}
 
-			function colorpickertypes:Set(color, newalpha)
-				set(color, newalpha)
-			end
+            function colorpickertypes:Set(color, newalpha)
+                set(color, newalpha)
+            end
 
-			Library:Connection(game:GetService("UserInputService").InputBegan, function(Input)
-				if Colorpicker.Visible and Input.UserInputType == Enum.UserInputType.MouseButton1 then
-					if not Library:IsMouseOverFrame(Colorpicker) and not Library:IsMouseOverFrame(ColorpickerFrame) then
-						Colorpicker.Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y + 25)
-						TweenService:Create(Colorpicker, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
-						TweenService:Create(Colorpicker, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y)}):Play()
-						task.spawn(function()
-							task.wait(0.1)
-							Colorpicker.Visible = false
-							parent.ZIndex = 1
-							Library.Cooldown = false
-						end)
-						for _,V in next, Colorpicker:GetDescendants() do
-							if V:IsA("Frame") or V:IsA("TextButton") or V:IsA("ScrollingFrame") then
-								TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
-								Library.VisValues[V] = V.BackgroundTransparency
-							elseif V:IsA("TextLabel") or V:IsA("TextBox") then
-								TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
-								Library.VisValues[V] = V.TextTransparency
-							elseif V:IsA("ImageLabel") or V:IsA("ImageButton") then
-								TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {ImageTransparency = 1}):Play();
-								Library.VisValues[V] = V.ImageTransparency
-							elseif V:IsA("UIStroke") then
-								TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Transparency = 1}):Play()
-								Library.VisValues[V] = V.Transparency
-							end
-						end
-					end
-				end
-			end)
+            Library:Connection(game:GetService("UserInputService").InputBegan, function(Input)
+                if Colorpicker.Visible and Input.UserInputType == Enum.UserInputType.MouseButton1 and input.UserInputType == Enum.UserInputType.Touch then
+                if not Library:IsMouseOverFrame(Colorpicker) and not Library:IsMouseOverFrame(ColorpickerFrame) then
+                    Colorpicker.Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y + 25)
+                    TweenService:Create(Colorpicker, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+                    TweenService:Create(Colorpicker, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y)}):Play()
+                    task.spawn(function()
+                            task.wait(0.1)
+                            Colorpicker.Visible = false
+                            parent.ZIndex = 1
+                            Library.Cooldown = false
+                    end)
+                    for _,V in next, Colorpicker:GetDescendants() do
+                            if V:IsA("Frame") or V:IsA("TextButton") or V:IsA("ScrollingFrame") then
+                                    TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+                                    Library.VisValues[V] = V.BackgroundTransparency
+                            elseif V:IsA("TextLabel") or V:IsA("TextBox") then
+                                    TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+                                    Library.VisValues[V] = V.TextTransparency
+                            elseif V:IsA("ImageLabel") or V:IsA("ImageButton") then
+                                    TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {ImageTransparency = 1}):Play();
+                                    Library.VisValues[V] = V.ImageTransparency
+                            elseif V:IsA("UIStroke") then
+                                    TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Transparency = 1}):Play()
+                                    Library.VisValues[V] = V.Transparency
+                            end
+                        end
+                    end
+                end
+            end)
 
-			ColorpickerFrame.MouseButton1Down:Connect(function()
-				if Colorpicker.Visible == false then
-					Colorpicker.Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y)
-					TweenService:Create(Colorpicker, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y + 25)}):Play()
-				end
-				Colorpicker.Visible = true
-				parent.ZIndex = 100
-				Library.Cooldown = true
-				TweenService:Create(Colorpicker, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-				for _,V in next, Colorpicker:GetDescendants() do
-					if V:IsA("Frame") or V:IsA("TextButton") or V:IsA("ScrollingFrame") then
-						TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {BackgroundTransparency = Library.VisValues[V]}):Play()
-					elseif V:IsA("TextLabel") or V:IsA("TextBox") then
-						TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {TextTransparency = Library.VisValues[V]}):Play()
-					elseif V:IsA("ImageLabel") or V:IsA("ImageButton") then
-						TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {ImageTransparency = Library.VisValues[V]}):Play();
-					elseif V:IsA("UIStroke") then
-						TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Transparency = 0}):Play()
-					end
-				end
+            ColorpickerFrame.MouseButton1Click:Connect(function()
+		        if Colorpicker.Visible == false then
+		            Colorpicker.Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y)
+		            TweenService:Create(Colorpicker, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0, ColorpickerFrame.AbsolutePosition.X - 100, 0, ColorpickerFrame.AbsolutePosition.Y + 25)}):Play()
+		        end
+		        Colorpicker.Visible = not Colorpicker.Visible -- who tf thought Colorpicker.Visible = true was a good idea like atzlazyblue founded this problem
+		        parent.ZIndex = 100
+		        Library.Cooldown = true
+		        TweenService:Create(Colorpicker, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+		        for _, V in next, Colorpicker:GetDescendants() do
+		            if V:IsA("Frame") or V:IsA("TextButton") or V:IsA("ScrollingFrame") then
+		                TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {BackgroundTransparency = Library.VisValues[V]}):Play()
+		            elseif V:IsA("TextLabel") or V:IsA("TextBox") then
+		                TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {TextTransparency = Library.VisValues[V]}):Play()
+		            elseif V:IsA("ImageLabel") or V:IsA("ImageButton") then
+		                TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {ImageTransparency = Library.VisValues[V]}):Play()
+		            elseif V:IsA("UIStroke") then
+		                TweenService:Create(V, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+		            end
+		        end
+		        if slidinghue then
+		            slidinghue = false
+		        end
+		        if slidingsaturation then
+		            slidingsaturation = false
+		        end
+		    end) 
 
-				if slidinghue then
-					slidinghue = false
-				end
-
-				if slidingsaturation then
-					slidingsaturation = false
-				end
-			end)
-
-			return colorpickertypes, Colorpicker
-		end
-	end
-
-
+            return colorpickertypes, Colorpicker
+        end
+    end
+	--
 	function Library:updateNotifsPositions(position)
 		for i, v in pairs(Library.Notifs) do 
 			local Position = Vector2.new(20, 20)
 			game:GetService("TweenService"):Create(v.Container, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.new(0,Position.X,0,Position.Y + (i * 25))}):Play()
 		end 
 	end
-
+	--
 	function Library:Notification(message, duration)
 		local notification = {Container = nil, Objects = {}}
 		--
@@ -731,6 +769,7 @@ do
 			--
 			local ScreenGui = Instance.new('ScreenGui', game:GetService("RunService"):IsStudio() and game.Players.LocalPlayer.PlayerGui or game.CoreGui)
 			local Outline = Instance.new('Frame', ScreenGui)
+			MakeDraggable(Outline)
 			local UICorner = Instance.new('UICorner', Outline)
 			local UIStroke = Instance.new('UIStroke', Outline)
 			local Inline = Instance.new('Frame', Outline)
@@ -741,6 +780,31 @@ do
 			local Tabs = Instance.new('Frame', Inline)
 			local UIListLayout = Instance.new('UIListLayout', Tabs)
 			local TextButton = Instance.new('TextButton', Inline)
+			--
+			if UserInputService.TouchEnabled then
+				local ToggleSG = Instance.new("ScreenGui", game.CoreGui)
+			    local button = Instance.new("TextButton", ToggleSG)
+	 		   local UICorner_Inf = Instance.new("UICorner", button)
+			    ToggleSG.DisplayOrder = 9999
+		    	--
+			    button.Size = UDim2.new(0, 80, 0, 20)
+			    button.AnchorPoint = Vector2.new(1, 0)
+                button.Position = UDim2.new(1, -10, 0, 32)
+			    button.BackgroundColor3 = Color3.fromRGB(16,16,16)
+			    button.AutoButtonColor = false
+			    button.BorderColor3 = Color3.new(0,0,0)
+			    button.RichText = true
+                button.TextSize = 12
+                button.Font = Enum.Font.Ubuntu
+			    button.Text = '<font color="#d0e300">Starhook</font><font color="#FFFFFF">.club</font>'			
+			    button.TextColor3 = Color3.new(1,1,1)
+			    --
+	    		UICorner_Inf.CornerRadius = UDim.new(0.25,0)
+	            --
+			    button.MouseButton1Click:Connect(function()
+			        Outline.Visible = not Outline.Visible
+			    end)
+			end;
 			--
 			ScreenGui.DisplayOrder = 100
 			ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -759,13 +823,14 @@ do
 			--
 			local Logo = Instance.new("ImageLabel")
 			Logo.Name = "Logo"
-			Logo.Image = "http://www.roblox.com/asset/?id=17673929618"
+			Logo.Image = Properties.Logo
 			Logo.ScaleType = Enum.ScaleType.Fit
 			Logo.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 			Logo.BackgroundTransparency = 1
 			Logo.BorderColor3 = Color3.fromRGB(0, 0, 0)
 			Logo.BorderSizePixel = 0
 			Logo.Position = UDim2.fromOffset(10, -20)
+			Logo.ImageColor3 = Properties.LogoRGB
 			Logo.Size = UDim2.fromOffset(90, 90)
 			Logo.Parent = Holder
 			--
@@ -793,7 +858,7 @@ do
 			Tabs.Name = "Tabs"
 			Tabs.Position = UDim2.new(0,5,0,10)
 			Tabs.Size = UDim2.new(0,140,1,-20)
-				Tabs.BackgroundColor3 = Color3.new(1,1,1)
+			Tabs.BackgroundColor3 = Color3.new(1,1,1)
 			Tabs.BackgroundTransparency = 1.01
 			Tabs.BorderSizePixel = 0
 			Tabs.BorderColor3 = Color3.new(0,0,0)
@@ -859,30 +924,6 @@ do
 				Holder = Holder,
 				FadeThing = FadeThing
 			}
-
-			-- // Dragging
-			Library:Connection(TextButton.MouseButton1Down, function()
-				local Location = game:GetService("UserInputService"):GetMouseLocation()
-				Window.Dragging[1] = true
-				Window.Dragging[2] =
-					UDim2.new(0, Location.X - Outline.AbsolutePosition.X, 0, Location.Y - Outline.AbsolutePosition.Y)
-			end)
-			Library:Connection(game:GetService("UserInputService").InputEnded, function(Input, IsTyping)
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-					Window.Dragging[1] = false
-					Window.Dragging[2] = UDim2.new(0, 0, 0, 0)
-				end
-			end)
-			Library:Connection(game:GetService("UserInputService").InputChanged, function(Input)
-				local Location = game:GetService("UserInputService"):GetMouseLocation()
-				local ActualLocation = nil
-
-				-- Dragging
-				if Window.Dragging[1] then
-
-					game:GetService("TweenService"):Create(Outline, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0,Location.X - Window.Dragging[2].X.Offset + (Outline.Size.X.Offset * Outline.AnchorPoint.X),0,Location.Y - Window.Dragging[2].Y.Offset + (Outline.Size.Y.Offset * Outline.AnchorPoint.Y))}):Play()
-				end
-			end)
 
 			-- // Functions
 			function Window:UpdateTabs()
@@ -1454,206 +1495,178 @@ do
 		end
 		--
 		function Sections:Slider(Properties)
-			if not Properties then
-				Properties = {}
-			end
-			--
-			local Slider = {
-				Window = self.Window,
-				Page = self.Page,
-				Section = self,
-				Name = Properties.Name or "Slider",
-				Min = (Properties.min or Properties.Min or Properties.minimum or Properties.Minimum or 0),
-				State = (
-					Properties.state
-						or Properties.State
-						or Properties.def
-						or Properties.Def
-						or Properties.default
-						or Properties.Default
-						or 10
-				),
-				Max = (Properties.max or Properties.Max or Properties.maximum or Properties.Maximum or 100),
-				Sub = (
-					Properties.suffix
-						or Properties.Suffix
-						or Properties.ending
-						or Properties.Ending
-						or Properties.prefix
-						or Properties.Prefix
-						or Properties.measurement
-						or Properties.Measurement
-						or ""
-				),
-				Decimals = (Properties.decimals or Properties.Decimals or 1),
-				Callback = (
-					Properties.callback
-						or Properties.Callback
-						or Properties.callBack
-						or Properties.CallBack
-						or function() end
-				),
-				Flag = (
-					Properties.flag
-						or Properties.Flag
-						or Properties.pointer
-						or Properties.Pointer
-						or Library.NextFlag()
-				),
-			}
-			local TextValue = ("[value]" .. Slider.Sub)
-			--
-			local NewSlider = Instance.new('TextButton', Slider.Section.Elements.SectionContent)
-			local SliderTitle = Instance.new('TextLabel', NewSlider)
-			local ToggleFrame = Instance.new('Frame', NewSlider)
-			local UICorner_2 = Instance.new('UICorner', ToggleFrame)
-			local FillHold = Instance.new('Frame', ToggleFrame)
-			local UICorner_3 = Instance.new('UICorner', FillHold)
-			local Fill = Instance.new('TextButton', FillHold)
-			local UICorner_4 = Instance.new('UICorner', Fill)
-			local Circle = Instance.new('Frame', Fill)
-			local UICorner_4 = Instance.new('UICorner', Circle)
-			local SliderValue = Instance.new('TextLabel', NewSlider)
-			--
-			NewSlider.Name = "NewSlider"
-			NewSlider.Size = UDim2.new(1,0,0,32)
-			NewSlider.BackgroundColor3 = Color3.new(1,1,1)
-			NewSlider.BackgroundTransparency = 1
-			NewSlider.BorderSizePixel = 0
-			NewSlider.BorderColor3 = Color3.new(0,0,0)
-			NewSlider.Text = ""
-			NewSlider.TextColor3 = Color3.new(0,0,0)
-			NewSlider.AutoButtonColor = false
-			NewSlider.Font = Enum.Font.SourceSans
-			NewSlider.TextSize = 14
-			NewSlider.ZIndex = 53
-			--
-			SliderTitle.Name = "SliderTitle"
-			SliderTitle.Size = UDim2.new(1,-10,0,17)
-			SliderTitle.BackgroundColor3 = Color3.new(1,1,1)
-			SliderTitle.BackgroundTransparency = 1
-			SliderTitle.BorderSizePixel = 0
-			SliderTitle.BorderColor3 = Color3.new(0,0,0)
-			SliderTitle.Text = Slider.Name
-			SliderTitle.TextColor3 = Color3.new(0.7843,0.7843,0.7843)
-			SliderTitle.Font = Enum.Font.Gotham
-			SliderTitle.TextSize = Library.FontSize
-			SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
-			--
-			ToggleFrame.Name = "ToggleFrame"
-			ToggleFrame.Position = UDim2.new(0,0,1,-8)
-			ToggleFrame.Size = UDim2.new(1,0,0,8)
-			ToggleFrame.BackgroundColor3 = Color3.new(0.051,0.051,0.051)
-			ToggleFrame.BorderSizePixel = 0
-			ToggleFrame.BorderColor3 = Color3.new(0,0,0)
-			ToggleFrame.ZIndex = 53
-			--
-			FillHold.Name = "FillHold"
-			FillHold.Position = UDim2.new(0,1,0,1)
-			FillHold.Size = UDim2.new(1,-2,1,-2)
-			FillHold.BackgroundColor3 = Color3.new(0.6667,0.6667,1)
-			FillHold.BackgroundTransparency = 1
-			FillHold.BorderSizePixel = 0
-			FillHold.BorderColor3 = Color3.new(0,0,0)
-			FillHold.ZIndex = 53
-			--
-			Fill.Name = "Fill"
-			Fill.Size = UDim2.new(0,0,1,0)
-			Fill.BackgroundColor3 = Library.Accent
-			Fill.BorderSizePixel = 0
-			Fill.BorderColor3 = Color3.new(0,0,0)
-			Fill.Text = ""
-			Fill.TextColor3 = Color3.new(0,0,0)
-			Fill.AutoButtonColor = false
-			Fill.Font = Enum.Font.SourceSans
-			Fill.TextSize = 14
-			Fill.ZIndex = 53
-			table.insert(Library.ThemeObjects, Fill)
-			--
-			Circle.Name = "Circle"
-			Circle.Position = UDim2.new(1,-6,0.5,-6)
-			Circle.Size = UDim2.new(0,13,0,13)
-			Circle.BackgroundColor3 = Color3.new(1,1,1)
-			Circle.BorderSizePixel = 0
-			Circle.BorderColor3 = Color3.new(0,0,0)
-			Circle.ZIndex = 53
-			--
-			UICorner_4.CornerRadius = UDim.new(1,0)
-			--
-			SliderValue.Name = "SliderValue"
-			SliderValue.Size = UDim2.new(1,0,0,17)
-			SliderValue.BackgroundColor3 = Color3.new(1,1,1)
-			SliderValue.BackgroundTransparency = 1
-			SliderValue.BorderSizePixel = 0
-			SliderValue.BorderColor3 = Color3.new(0,0,0)
-			SliderValue.Text = ""
-			SliderValue.TextColor3 = Color3.new(0.4706,0.4706,0.4706)
-			SliderValue.Font = Enum.Font.Gotham
-			SliderValue.TextSize = Library.FontSize
-			SliderValue.TextXAlignment = Enum.TextXAlignment.Right
-
-			-- // Functions
-			local Sliding = false
-			local Val = Slider.State
-			local function Set(value)
-				value = math.clamp(Library:Round(value, Slider.Decimals), Slider.Min, Slider.Max)
-
-				local sizeX = ((value - Slider.Min) / (Slider.Max - Slider.Min))
-				--Fill.Size = UDim2.new(sizeX, 0, 1, 0)
-				game:GetService("TweenService"):Create(Fill, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(sizeX, 0, 1, 0)}):Play()
-				SliderValue.Text = TextValue:gsub("%[value%]", string.format("%.14g", value))
-				Val = value
-
-				Library.Flags[Slider.Flag] = value
-				Slider.Callback(value)
-			end				
-			--
-			local function Slide(input)
-				local sizeX = (input.Position.X - NewSlider.AbsolutePosition.X) / NewSlider.AbsoluteSize.X
-				local value = ((Slider.Max - Slider.Min) * sizeX) + Slider.Min
-				Set(value)
-			end
-			--
-			Library:Connection(NewSlider.InputBegan, function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					Sliding = true
-					Slide(input)
-				end
-			end)
-			Library:Connection(NewSlider.InputEnded, function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					Sliding = false
-				end
-			end)
-			Library:Connection(Fill.InputBegan, function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					Sliding = true
-					Slide(input)
-				end
-			end)
-			Library:Connection(Fill.InputEnded, function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					Sliding = false
-				end
-			end)
-			Library:Connection(game:GetService("UserInputService").InputChanged, function(input)
-				if input.UserInputType == Enum.UserInputType.MouseMovement then
-					if Sliding then
-						Slide(input)
-					end
-				end
-			end)
-			--
-			function Slider:Set(Value)
-				Set(Value)
-			end
-			--
-			Flags[Slider.Flag] = Set
-			Library.Flags[Slider.Flag] = Slider.State
-			Set(Slider.State)
-
-			-- // Returning
-			return Slider
+		    if not Properties then
+		        Properties = {}
+		    end
+		    --
+		    local Slider = {
+		        Window = self.Window,
+		        Page = self.Page,
+		        Section = self,
+		        Name = Properties.Name or "Slider",
+		        Min = Properties.min or Properties.Min or Properties.minimum or Properties.Minimum or 0,
+		        State = Properties.state or Properties.State or Properties.def or Properties.Def or Properties.default or Properties.Default or 10,
+		        Max = Properties.max or Properties.Max or Properties.maximum or Properties.Maximum or 100,
+		        Sub = Properties.suffix or Properties.Suffix or Properties.ending or Properties.Ending or Properties.prefix or Properties.Prefix or Properties.measurement or Properties.Measurement or "",
+		        Decimals = Properties.decimals or Properties.Decimals or 1,
+		        Callback = Properties.callback or Properties.Callback or Properties.callBack or Properties.CallBack or function() end,
+		        Flag = Properties.flag or Properties.Flag or Properties.pointer or Properties.Pointer or Library.NextFlag(),
+		    }
+		    local TextValue = ("[value]" .. Slider.Sub)
+		    --
+		    local NewSlider = Instance.new('TextButton', Slider.Section.Elements.SectionContent)
+		    local SliderTitle = Instance.new('TextLabel', NewSlider)
+		    local ToggleFrame = Instance.new('Frame', NewSlider)
+		    local UICorner_2 = Instance.new('UICorner', ToggleFrame)
+		    local FillHold = Instance.new('Frame', ToggleFrame)
+		    local UICorner_3 = Instance.new('UICorner', FillHold)
+		    local Fill = Instance.new('TextButton', FillHold)
+		    local UICorner_4 = Instance.new('UICorner', Fill)
+		    local Circle = Instance.new('Frame', Fill)
+		    local UICorner_5 = Instance.new('UICorner', Circle)
+		    local SliderValue = Instance.new('TextLabel', NewSlider)
+		    --
+		    NewSlider.Name = "NewSlider"
+		    NewSlider.Size = UDim2.new(1,0,0,32)
+		    NewSlider.BackgroundColor3 = Color3.new(1,1,1)
+		    NewSlider.BackgroundTransparency = 1
+		    NewSlider.BorderSizePixel = 0
+		    NewSlider.BorderColor3 = Color3.new(0,0,0)
+		    NewSlider.Text = ""
+		    NewSlider.TextColor3 = Color3.new(0,0,0)
+		    NewSlider.AutoButtonColor = false
+		    NewSlider.Font = Enum.Font.SourceSans
+		    NewSlider.TextSize = 14
+		    NewSlider.ZIndex = 53
+		    --
+		    SliderTitle.Name = "SliderTitle"
+		    SliderTitle.Size = UDim2.new(1,-10,0,17)
+		    SliderTitle.BackgroundColor3 = Color3.new(1,1,1)
+		    SliderTitle.BackgroundTransparency = 1
+		    SliderTitle.BorderSizePixel = 0
+		    SliderTitle.BorderColor3 = Color3.new(0,0,0)
+		    SliderTitle.Text = Slider.Name
+		    SliderTitle.TextColor3 = Color3.new(0.7843,0.7843,0.7843)
+		    SliderTitle.Font = Enum.Font.Gotham
+		    SliderTitle.TextSize = Library.FontSize
+		    SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+		    --
+		    ToggleFrame.Name = "ToggleFrame"
+		    ToggleFrame.Position = UDim2.new(0,0,1,-8)
+		    ToggleFrame.Size = UDim2.new(1,0,0,8)
+		    ToggleFrame.BackgroundColor3 = Color3.new(0.051,0.051,0.051)
+		    ToggleFrame.BorderSizePixel = 0
+		    ToggleFrame.BorderColor3 = Color3.new(0,0,0)
+		    ToggleFrame.ZIndex = 53
+		    --
+		    FillHold.Name = "FillHold"
+		    FillHold.Position = UDim2.new(0,1,0,1)
+		    FillHold.Size = UDim2.new(1,-2,1,-2)
+		    FillHold.BackgroundColor3 = Color3.new(0.6667,0.6667,1)
+		    FillHold.BackgroundTransparency = 1
+		    FillHold.BorderSizePixel = 0
+		    FillHold.BorderColor3 = Color3.new(0,0,0)
+		    FillHold.ZIndex = 53
+		    --
+		    Fill.Name = "Fill"
+		    Fill.Size = UDim2.new(0,0,1,0)
+		    Fill.BackgroundColor3 = Library.Accent
+		    Fill.BorderSizePixel = 0
+		    Fill.BorderColor3 = Color3.new(0,0,0)
+		    Fill.Text = ""
+		    Fill.TextColor3 = Color3.new(0,0,0)
+		    Fill.AutoButtonColor = false
+		    Fill.Font = Enum.Font.SourceSans
+		    Fill.TextSize = 14
+		    Fill.ZIndex = 53
+		    table.insert(Library.ThemeObjects, Fill)
+		    --
+		    Circle.Name = "Circle"
+		    Circle.Position = UDim2.new(1,-6,0.5,-6)
+		    Circle.Size = UDim2.new(0,13,0,13)
+		    Circle.BackgroundColor3 = Color3.new(1,1,1)
+		    Circle.BorderSizePixel = 0
+		    Circle.BorderColor3 = Color3.new(0,0,0)
+		    Circle.ZIndex = 53
+		    --
+		    UICorner_5.CornerRadius = UDim.new(1,0)
+		    --
+		    SliderValue.Name = "SliderValue"
+		    SliderValue.Size = UDim2.new(1,0,0,17)
+		    SliderValue.BackgroundColor3 = Color3.new(1,1,1)
+		    SliderValue.BackgroundTransparency = 1
+		    SliderValue.BorderSizePixel = 0
+		    SliderValue.BorderColor3 = Color3.new(0,0,0)
+		    SliderValue.Text = ""
+		    SliderValue.TextColor3 = Color3.new(0.4706,0.4706,0.4706)
+		    SliderValue.Font = Enum.Font.Gotham
+		    SliderValue.TextSize = Library.FontSize
+		    SliderValue.TextXAlignment = Enum.TextXAlignment.Right
+		
+		    -- // Functions
+		    local Sliding = false
+		    local Val = Slider.State
+		
+		    local function Set(value)
+		        value = math.clamp(Library:Round(value, Slider.Decimals), Slider.Min, Slider.Max)
+		        local sizeX = ((value - Slider.Min) / (Slider.Max - Slider.Min))
+		        game:GetService("TweenService"):Create(Fill, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(sizeX, 0, 1, 0)}):Play()
+		        SliderValue.Text = TextValue:gsub("%[value%]", string.format("%.14g", value))
+		        Val = value
+		        Library.Flags[Slider.Flag] = value
+		        Slider.Callback(value)
+		    end
+		
+		    local function Slide(input)
+		        local sizeX = (input.Position.X - NewSlider.AbsolutePosition.X) / NewSlider.AbsoluteSize.X
+		        local value = ((Slider.Max - Slider.Min) * sizeX) + Slider.Min
+		        Set(value)
+		    end
+		
+		    Library:Connection(NewSlider.InputBegan, function(input)
+		        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		            Sliding = true
+		            Slide(input)
+		        end
+		    end)
+		
+		    Library:Connection(NewSlider.InputEnded, function(input)
+		        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		            Sliding = false
+		        end
+		    end)
+		
+		    Library:Connection(Fill.InputBegan, function(input)
+		        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		            Sliding = true
+		            Slide(input)
+		        end
+		    end)
+		
+		    Library:Connection(Fill.InputEnded, function(input)
+		        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		            Sliding = false
+		        end
+		    end)
+		
+		    Library:Connection(game:GetService("UserInputService").InputChanged, function(input)
+		        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		            if Sliding then
+		                Slide(input)
+		            end
+		        end
+		    end)
+		
+		    function Slider:Set(Value)
+		        Set(Value)
+		    end
+		
+		    Flags[Slider.Flag] = Set
+		    Library.Flags[Slider.Flag] = Slider.State
+		    Set(Slider.State)
+		
+		    -- // Returning
+		    return Slider
 		end
 		--
 		function Sections:List(Properties)
@@ -2635,5 +2648,6 @@ do
 		--
 	end
 end
+
 
 return Library
