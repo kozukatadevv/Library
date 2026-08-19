@@ -2636,4 +2636,4 @@ do
 	end
 end
 
-local library = Library;
+return Library
