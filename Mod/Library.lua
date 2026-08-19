@@ -1,4 +1,6 @@
-local Drawing = loadstring(game:HttpGet("https://raw.githubusercontent.com/linemaster2/storage/main/Drawing.lua"))();
+-- Made by linemaster3
+-- Modifyed for mobile (atzlazyblue the skibidi modifyer)
+
 
 local Library = {};
 do
@@ -757,7 +759,7 @@ do
 			end
 			--
 			local Window = {
-				Size = Properties.Size or UDim2.new(0,600,0,450),
+				Size = Properties.Size or UDim2.new(0,720,0,540),
 				Pages = {},
 				PageAxis = 0,
 				Dragging = { false, UDim2.new(0, 0, 0, 0) },
@@ -892,18 +894,6 @@ do
 			Line2.BorderSizePixel = 0
 			Line2.Size = UDim2.new(0, 1, 1, 0)
 			Line2.Parent = Holder
-
-			local Logo = Instance.new("ImageLabel")
-			Logo.Name = "Logo"
-			Logo.Image = "http://www.roblox.com/asset/?id=17669613413"
-			Logo.ScaleType = Enum.ScaleType.Fit
-			Logo.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			Logo.BackgroundTransparency = 1
-			Logo.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			Logo.BorderSizePixel = 0
-			Logo.Position = UDim2.fromOffset(10, -20)
-			Logo.Size = UDim2.fromOffset(90, 90)
-			Logo.Parent = Holder
 
 			local FadeThing = Instance.new("Frame")
 			FadeThing.Name = "FadeThing"
@@ -2647,5 +2637,5 @@ do
 	end
 end
 
-local library = Library;
-local flags = Library.Flags;
+
+return Library
