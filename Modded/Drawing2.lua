@@ -97,7 +97,7 @@ do
 			delfile(font_dir .. "/main.ttf")
 		end
 
-		writefile(font_dir .. "/main.ttf", game:HttpGet("https://github.com/kozukatadevv/Library/raw/refs/heads/main/Modded/Font/Minecraftiav3.ttf"))
+		writefile(font_dir .. "/main.ttf", game:HttpGet("https://github.com/kozukatadevv/Library/raw/refs/heads/main/Modded/Font/Minecraftiev3.ttf"))
 
 		local minecraftia = {
 			name = "Minecraftia",
